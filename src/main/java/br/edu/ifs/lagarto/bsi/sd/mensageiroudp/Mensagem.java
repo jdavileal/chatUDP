@@ -34,7 +34,17 @@ public class Mensagem {
     }
     
     public static Mensagem getMensagem(byte[] bytes){
-        String[] ms = new String(bytes).split(sinal);
+        String[] ms = new String(bytes, 0, bytes.length).split(sinal);
+        Mensagem msg = new Mensagem();
+        
+        msg.type = MensagemType.getType(Integer.parseInt(ms[0]));
+        msg.username = ms[1];
+        msg.msg = ms[2];
+        return msg;
+        
+    }
+    public static Mensagem getMensagem(String  decode){
+        String[] ms = decode.split(sinal);
         Mensagem msg = new Mensagem();
         
         msg.type = MensagemType.getType(Integer.parseInt(ms[0]));

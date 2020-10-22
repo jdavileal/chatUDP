@@ -10,7 +10,6 @@ import br.edu.ifs.lagarto.bsi.sd.mensageiroudp.MensagemType;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,18 +20,19 @@ import java.util.logging.Logger;
 public class ClienteUDP {
 
     private ServerUDP server;
-    private String username;
-    private InetAddress IpServer;
-    private byte buffer[] = new byte[1024];
-    private int portaServer;
+    private byte buffer[];
+    
+    public ClienteUDP(int porta, String username) {
+        this.server = new ServerUDP(porta, username);
+    }
 
     public ClienteUDP(ServerUDP server) {
         this.server = server;
     }
 
-    public void enviarMensagem(String msg, String username) {
+    public void enviarMensagem(String msg, String username) {       
         buffer = Mensagem.getMensagem(msg, username).toString().getBytes();
-        DatagramPacket send = new DatagramPacket(buffer, buffer.length, IpServer, portaServer);
+        DatagramPacket send = new DatagramPacket(buffer, buffer.length, server.getIpCliente(), server.getPortaCliente());
         try {
             server.getSocket().send(send);
         } catch (IOException ex) {
@@ -41,29 +41,27 @@ public class ClienteUDP {
     }
 
     public boolean IniciarConexao(String ip, int porta) {
-        buffer = Mensagem.getMensagemConfiguracao(MensagemType.INICIAR_CONEXAO).toString().getBytes();
+        
         try {
-            IpServer = InetAddress.getByName(ip);
-            portaServer = porta;
-        } catch (UnknownHostException ex) {
-            Logger.getLogger(ClienteUDP.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        DatagramPacket send = new DatagramPacket(buffer, buffer.length, IpServer, portaServer);
-        try {
-            server.getSocket().send(send);
+            buffer = Mensagem.getMensagemConfiguracao(MensagemType.INICIAR_CONEXAO).toString().getBytes();
+            InetAddress ipA = InetAddress.getByName(ip);
+            DatagramPacket send = new DatagramPacket(buffer, buffer.length, ipA, porta);
+            server.getSocket().send(send);  
             while (true) {
                 DatagramPacket datagrama = new DatagramPacket(buffer, buffer.length);
                 server.getSocket().receive(datagrama);
                 Mensagem msg = Mensagem.getMensagem(datagrama.getData());
 
-                if (!datagrama.getAddress().equals(IpServer)) {
+                if (!datagrama.getAddress().equals(ipA)) {
                     continue;
                 }
                 if (msg.getType() == MensagemType.ACEITAR_CONEXAO) {
-                    System.out.println("Conexão aceita: " + IpServer.getHostAddress());
+                    System.out.println("Conexão aceita: " + ipA.getHostAddress());
+                    server.setPortaCliente(porta);
+                    server.setIpCliente(ipA);
                     return true;
                 } else {
-                    System.out.println("Conexão Rejeitada: " + IpServer.getHostAddress());
+                    System.out.println("Conexão Rejeitada: " + ipA.getHostAddress());
                     return false;
                 }
 
@@ -74,4 +72,17 @@ public class ClienteUDP {
         return false;
     }
 
+    public ServerUDP getServer() {
+        return server;
+    }
+     
+    public void EncerrarConexao(){
+        buffer = Mensagem.getMensagemConfiguracao(MensagemType.ENCERRAR_CONEXAO).toString().getBytes();
+        DatagramPacket send = new DatagramPacket(buffer, buffer.length, server.getIpCliente(), server.getPortaCliente());
+        try {
+            server.getSocket().send(send);
+        } catch (IOException ex) {
+            Logger.getLogger(ServerUDP.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 }

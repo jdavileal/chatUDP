@@ -29,9 +29,8 @@ public class ServerUDP {
     private DatagramSocket socket;
     private InetAddress IpCliente;
     private int portaCliente;
-    private long tempoValidacaoConexaoViva = 40000;
+    //private long tempoValidacaoConexaoViva = 40000;
     private int validacao = 0;
-
     private DatagramPacket datagrama;
     private byte buffer[] = new byte[1024];
     private byte bufferSend[] = new byte[1024];
@@ -47,11 +46,7 @@ public class ServerUDP {
         }
     }
 
-    public static void main(String[] args) {
-        JOptionPane.showMessageDialog(null, "Tests");
-    }
-
-    public void aguardarConexao(IConexaoAceitaServer conexaoAceitar ) throws IOException {
+    public ClienteUDP aguardarConexao(IConexaoAceitaServer conexaoAceitar) throws IOException {
         while (true) {
             datagrama = new DatagramPacket(buffer, buffer.length);
             socket.receive(datagrama);
@@ -64,44 +59,31 @@ public class ServerUDP {
                             JOptionPane.INFORMATION_MESSAGE);
                     if (JOptionPane.OK_OPTION == op) {
                         IpCliente = datagrama.getAddress();
-                        buffer = Mensagem.getMensagemConfiguracao(MensagemType.ACEITAR_CONEXAO).toString().getBytes();
-                        datagrama = new DatagramPacket(buffer, buffer.length, IpCliente, datagrama.getPort());
                         portaCliente = datagrama.getPort();
+                        bufferSend = Mensagem.getMensagemConfiguracao(MensagemType.ACEITAR_CONEXAO).toString().getBytes();
+                        datagrama = new DatagramPacket(bufferSend, bufferSend.length, IpCliente, datagrama.getPort());
                         socket.send(datagrama);
-                        conexaoAtiva();
-                        receberMensagem( new IPrint() {
-                            @Override
-                            public void print(String msg, String username) {
-                               System.out.println(msg+": "+ username);
-                            }
-
-                            @Override
-                            public void print(Mensagem mensagem) {
-                                System.out.println(mensagem);
-                            }
-                        });
-                        return;
+                        System.out.println("Conexao Aceita");
+                        return new ClienteUDP(this);
                     } else {
-                        buffer = Mensagem.getMensagemConfiguracao(MensagemType.REJEITAR_CONEXAO).toString().getBytes();
-                        datagrama = new DatagramPacket(buffer, buffer.length, datagrama.getAddress(), datagrama.getPort());
+                        bufferSend = Mensagem.getMensagemConfiguracao(MensagemType.REJEITAR_CONEXAO).toString().getBytes();
+                        datagrama = new DatagramPacket(bufferSend, bufferSend.length, datagrama.getAddress(), datagrama.getPort());
                         socket.send(datagrama);
                         System.out.println("Conexao Rejeitada");
                     }
                 }
-
             } catch (Exception e) {
                 System.err.println(e.getMessage());
             }
         }
-
     }
 
     public void receberMensagem(IPrint print) throws IOException {
-        while (true) {
-            datagrama = new DatagramPacket(buffer, buffer.length);
+        boolean controle = true;
+        while (controle) {
+            datagrama = new DatagramPacket(buffer, buffer.length);           
             socket.receive(datagrama);
             Mensagem msg = Mensagem.getMensagem(datagrama.getData());
-            
             if(!datagrama.getAddress().equals(IpCliente))
                 continue;
             if(msg.getType() == MensagemType.ACEITAR_CONEXAO){
@@ -118,24 +100,18 @@ public class ServerUDP {
                 print.print(msg);
                 JOptionPane.showMessageDialog(null, msg);
             }else if (msg.getType() == MensagemType.ENCERRAR_CONEXAO){
+                System.out.println("Encerrando Conexão");
                 IpCliente = null;
+                portaCliente = 0;
                 datagrama = null;
-                tempoValidacaoConexaoViva = 0;
-                aguardarConexao(null);
-                break;
+                //tempoValidacaoConexaoViva = 0;
+                //aguardarConexao(null);
+                controle = false;
             }
         }
+        System.out.println("SAIU WHILE");
     }
     
-//    public void enviarMensagem(String msg, String username){;
-//        buffer = Mensagem.getMensagem(msg, username).toString().getBytes();
-//        DatagramPacket send = new DatagramPacket(buffer, buffer.length, IpCliente, portaCliente);
-//        try {
-//            socket.send(send);
-//        } catch (IOException ex) {
-//            Logger.getLogger(ServerUDP.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//    }
     
     public void conexaoAtiva(){
         if(validacao > 3){
@@ -154,7 +130,29 @@ public class ServerUDP {
     public DatagramSocket getSocket() {
         return socket;
     }
-    
-    
 
+    public InetAddress getIpCliente() {
+        return IpCliente;
+    }
+
+    public int getPortaCliente() {
+        return portaCliente;
+    }
+
+    public void setIpCliente(InetAddress IpCliente) {
+        this.IpCliente = IpCliente;
+    }
+
+    public void setPortaCliente(int portaCliente) {
+        this.portaCliente = portaCliente;
+    } 
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
 }
