@@ -5,10 +5,6 @@
  */
 package br.edu.ifs.lagarto.bsi.sd.mensageiroudp.conexao;
 
-import br.edu.ifs.lagarto.bsi.sd.mensageiroudp.IConexaoAceitaServer;
-import br.edu.ifs.lagarto.bsi.sd.mensageiroudp.IPrint;
-import br.edu.ifs.lagarto.bsi.sd.mensageiroudp.Mensagem;
-import br.edu.ifs.lagarto.bsi.sd.mensageiroudp.MensagemType;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -33,7 +29,6 @@ public class ServerUDP {
     private int validacao = 0;
     private DatagramPacket datagrama;
     private byte buffer[] = new byte[1024];
-    private byte bufferSend[] = new byte[1024];
 
     public ServerUDP(int porta, String username) {
         this.porta = porta;
@@ -46,30 +41,39 @@ public class ServerUDP {
         }
     }
 
-    public ClienteUDP aguardarConexao(IConexaoAceitaServer conexaoAceitar) throws IOException {
+    /**
+     *
+     * @param conexaoAceitar Interface com o metodo de aceitar, que diz se a
+     * conexão dever ser aceita
+     * @return true se a conexão for aceita e false se a conexão for recursada
+     * @throws IOException
+     */
+    public boolean aguardarConexao(IConexaoAceitaServer conexaoAceitar) throws IOException {
         while (true) {
             datagrama = new DatagramPacket(buffer, buffer.length);
             socket.receive(datagrama);
             Mensagem msg = Mensagem.getMensagem(datagrama.getData());
             try {
+                byte bufferSend[] = new byte[1024];
                 if (msg.getType() == MensagemType.INICIAR_CONEXAO) {
-                    int op = JOptionPane.showConfirmDialog(null,
-                            datagrama.getAddress().getHostAddress() + "Está solicitando Uma conexão",
-                            "Deseja Aceitar",
-                            JOptionPane.INFORMATION_MESSAGE);
-                    if (JOptionPane.OK_OPTION == op) {
+//                    int op = JOptionPane.showConfirmDialog(null,
+//                            datagrama.getAddress().getHostAddress()+ "Está solicitando Uma conexão",
+//                            "Deseja Aceitar",
+//                            JOptionPane.INFORMATION_MESSAGE);
+                    if (conexaoAceitar.aceitar(datagrama.getAddress().getHostAddress(), msg.getUsername())) {
                         IpCliente = datagrama.getAddress();
                         portaCliente = datagrama.getPort();
                         bufferSend = Mensagem.getMensagemConfiguracao(MensagemType.ACEITAR_CONEXAO).toString().getBytes();
                         datagrama = new DatagramPacket(bufferSend, bufferSend.length, IpCliente, datagrama.getPort());
                         socket.send(datagrama);
                         System.out.println("Conexao Aceita");
-                        return new ClienteUDP(this);
+                        return true;
                     } else {
                         bufferSend = Mensagem.getMensagemConfiguracao(MensagemType.REJEITAR_CONEXAO).toString().getBytes();
                         datagrama = new DatagramPacket(bufferSend, bufferSend.length, datagrama.getAddress(), datagrama.getPort());
                         socket.send(datagrama);
                         System.out.println("Conexao Rejeitada");
+                        return false;
                     }
                 }
             } catch (Exception e) {
@@ -78,43 +82,63 @@ public class ServerUDP {
         }
     }
 
+    /**
+     * Este método continua rodando até receber uma mensagem de Encerrar Conexao
+     *
+     * @param print
+     * @throws IOException
+     */
     public void receberMensagem(IPrint print) throws IOException {
         boolean controle = true;
         while (controle) {
-            datagrama = new DatagramPacket(buffer, buffer.length);           
+            buffer = new byte[1024];
+            datagrama = new DatagramPacket(buffer, buffer.length);
             socket.receive(datagrama);
             Mensagem msg = Mensagem.getMensagem(datagrama.getData());
-            if(!datagrama.getAddress().equals(IpCliente))
+            if (!datagrama.getAddress().equals(IpCliente)) {
                 continue;
-            if(msg.getType() == MensagemType.ACEITAR_CONEXAO){
-                portaCliente = datagrama.getPort();
-                IpCliente = datagrama.getAddress();
-                System.out.print("Conexão aceita: "+IpCliente.getHostAddress());
             }
-            else if (msg.getType() == MensagemType.ESTAH_ATIVO_REQUEST) {
-                bufferSend = Mensagem.getMensagemConfiguracao(MensagemType.ESTAH_ATIVO_REPLY).toString().getBytes();
-                datagrama = new DatagramPacket(bufferSend, bufferSend.length, IpCliente, datagrama.getPort());
-                socket.send(datagrama);
-                validacao = 0;
-            } else if (msg.getType() == MensagemType.MENSAGEM) {
-                print.print(msg);
-                JOptionPane.showMessageDialog(null, msg);
-            }else if (msg.getType() == MensagemType.ENCERRAR_CONEXAO){
-                System.out.println("Encerrando Conexão");
-                IpCliente = null;
-                portaCliente = 0;
-                datagrama = null;
-                //tempoValidacaoConexaoViva = 0;
-                //aguardarConexao(null);
-                controle = false;
+            if (null != msg.getType()) {
+                switch (msg.getType()) {
+                    case ACEITAR_CONEXAO:
+                        portaCliente = datagrama.getPort();
+                        IpCliente = datagrama.getAddress();
+                        System.out.print("Conexão aceita: " + IpCliente.getHostAddress());
+                        break;
+                    case ESTAH_ATIVO_REQUEST:
+                        buffer = Mensagem.getMensagemConfiguracao(MensagemType.ESTAH_ATIVO_REPLY).toString().getBytes();
+                        datagrama = new DatagramPacket(buffer, buffer.length, IpCliente, datagrama.getPort());
+                        socket.send(datagrama);
+                        validacao = 0;
+                        break;
+                    case MENSAGEM:
+                        print.print(msg);
+                        break;
+                    case ENCERRAR_CONEXAO:
+                        System.out.println("Encerrando Conexão");
+                        IpCliente = null;
+                        portaCliente = 0;
+                        datagrama = null;
+                        msg.setMsg("A conexão foi Encerrada");
+                        msg.setUsername("App");
+                        print.print(msg);
+                        //tempoValidacaoConexaoViva = 0;
+                        //aguardarConexao(null);
+                        controle = false;
+                        break;
+                    default:
+                        break;
+                }
+                
             }
         }
-        System.out.println("SAIU WHILE");
     }
-    
-    
-    public void conexaoAtiva(){
-        if(validacao > 3){
+
+    /**
+     * TODO: Falta implementação
+     */
+    public void conexaoAtiva() {
+        if (validacao > 3) {
             JOptionPane.showMessageDialog(null, "A conexão foi encerrada!!!");
             return;
         }
@@ -145,7 +169,7 @@ public class ServerUDP {
 
     public void setPortaCliente(int portaCliente) {
         this.portaCliente = portaCliente;
-    } 
+    }
 
     public String getUsername() {
         return username;
@@ -154,5 +178,5 @@ public class ServerUDP {
     public void setUsername(String username) {
         this.username = username;
     }
-    
+
 }

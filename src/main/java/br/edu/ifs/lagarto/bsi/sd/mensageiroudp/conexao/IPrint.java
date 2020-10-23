@@ -3,7 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package br.edu.ifs.lagarto.bsi.sd.mensageiroudp;
+package br.edu.ifs.lagarto.bsi.sd.mensageiroudp.conexao;
+
+import br.edu.ifs.lagarto.bsi.sd.mensageiroudp.conexao.Mensagem;
 
 /**
  *
@@ -11,6 +13,5 @@ package br.edu.ifs.lagarto.bsi.sd.mensageiroudp;
  */
 public interface IPrint {
     
-    public void print(String msg, String username);
     public void print(Mensagem mensagem);
 }

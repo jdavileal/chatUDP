@@ -5,8 +5,6 @@
  */
 package br.edu.ifs.lagarto.bsi.sd.mensageiroudp.conexao;
 
-import br.edu.ifs.lagarto.bsi.sd.mensageiroudp.Mensagem;
-import br.edu.ifs.lagarto.bsi.sd.mensageiroudp.MensagemType;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -21,7 +19,7 @@ public class ClienteUDP {
 
     private ServerUDP server;
     private byte buffer[];
-    
+
     public ClienteUDP(int porta, String username) {
         this.server = new ServerUDP(porta, username);
     }
@@ -30,8 +28,8 @@ public class ClienteUDP {
         this.server = server;
     }
 
-    public void enviarMensagem(String msg, String username) {       
-        buffer = Mensagem.getMensagem(msg, username).toString().getBytes();
+    public void enviarMensagem(String msg) {
+        buffer = Mensagem.getMensagem(msg, server.getUsername()).toString().getBytes();
         DatagramPacket send = new DatagramPacket(buffer, buffer.length, server.getIpCliente(), server.getPortaCliente());
         try {
             server.getSocket().send(send);
@@ -41,12 +39,15 @@ public class ClienteUDP {
     }
 
     public boolean IniciarConexao(String ip, int porta) {
-        
         try {
-            buffer = Mensagem.getMensagemConfiguracao(MensagemType.INICIAR_CONEXAO).toString().getBytes();
+            Mensagem mensagem = Mensagem.getMensagemConfiguracao(MensagemType.INICIAR_CONEXAO);
+            mensagem.setUsername(this.server.getUsername());
+            buffer = mensagem.toString().getBytes();
             InetAddress ipA = InetAddress.getByName(ip);
             DatagramPacket send = new DatagramPacket(buffer, buffer.length, ipA, porta);
-            server.getSocket().send(send);  
+            server.getSocket().send(send);
+            System.out.println("Iniciando Conexao");
+            buffer = new byte[1024];
             while (true) {
                 DatagramPacket datagrama = new DatagramPacket(buffer, buffer.length);
                 server.getSocket().receive(datagrama);
@@ -64,7 +65,6 @@ public class ClienteUDP {
                     System.out.println("Conexão Rejeitada: " + ipA.getHostAddress());
                     return false;
                 }
-
             }
         } catch (IOException ex) {
             Logger.getLogger(ServerUDP.class.getName()).log(Level.SEVERE, null, ex);
@@ -75,8 +75,8 @@ public class ClienteUDP {
     public ServerUDP getServer() {
         return server;
     }
-     
-    public void EncerrarConexao(){
+
+    public void EncerrarConexao() {
         buffer = Mensagem.getMensagemConfiguracao(MensagemType.ENCERRAR_CONEXAO).toString().getBytes();
         DatagramPacket send = new DatagramPacket(buffer, buffer.length, server.getIpCliente(), server.getPortaCliente());
         try {
@@ -84,5 +84,13 @@ public class ClienteUDP {
         } catch (IOException ex) {
             Logger.getLogger(ServerUDP.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    public boolean receberConexao(IConexaoAceitaServer aceitarConexao) throws IOException {
+        return this.server.aguardarConexao(aceitarConexao);
+    }
+    
+    public void receberMensagem(IPrint print) throws IOException {
+        this.server.receberMensagem(print);
     }
 }

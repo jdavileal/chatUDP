@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package br.edu.ifs.lagarto.bsi.sd.mensageiroudp;
+package br.edu.ifs.lagarto.bsi.sd.mensageiroudp.conexao;
 
 /**
  *
@@ -69,6 +69,17 @@ public class Mensagem {
     public String getUsername() {
         return username;
     }
+
+
+    public void setMsg(String msg) {
+        this.msg = msg;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    
     
     
     

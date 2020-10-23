@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package br.edu.ifs.lagarto.bsi.sd.mensageiroudp;
+package br.edu.ifs.lagarto.bsi.sd.mensageiroudp.conexao;
 
 /**
  *
@@ -11,5 +11,5 @@ package br.edu.ifs.lagarto.bsi.sd.mensageiroudp;
  */
 public interface IConexaoAceitaServer {
     
-    public void fazerAlgumaCoisa();
+    public boolean aceitar(String ip, String user);
 }
