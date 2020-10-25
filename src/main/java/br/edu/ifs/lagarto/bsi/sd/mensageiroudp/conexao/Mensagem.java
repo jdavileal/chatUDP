@@ -5,6 +5,10 @@
  */
 package br.edu.ifs.lagarto.bsi.sd.mensageiroudp.conexao;
 
+import java.io.UnsupportedEncodingException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  *
  * @author zero
@@ -34,7 +38,13 @@ public class Mensagem {
     }
     
     public static Mensagem getMensagem(byte[] bytes){
-        String[] ms = new String(bytes, 0, bytes.length).split(sinal);
+        String[] ms;
+        try {
+            ms = new String(bytes, 0, bytes.length,"UTF-8").split(sinal);
+        } catch (UnsupportedEncodingException ex) {
+            ms = new String(bytes, 0, bytes.length).split(sinal);
+            Logger.getLogger(Mensagem.class.getName()).log(Level.SEVERE, null, ex);
+        }
         Mensagem msg = new Mensagem();
         
         msg.type = MensagemType.getType(Integer.parseInt(ms[0]));
@@ -43,7 +53,7 @@ public class Mensagem {
         return msg;
         
     }
-    public static Mensagem getMensagem(String  decode){
+    public static Mensagem getMensagem(String decode){
         String[] ms = decode.split(sinal);
         Mensagem msg = new Mensagem();
         
@@ -56,6 +66,15 @@ public class Mensagem {
     
     public String toString(){
         return this.type.getNum()+sinal+this.username+sinal+this.msg;
+    }
+    
+    public byte[] getBytes(){
+        try {
+            return this.toString().getBytes("UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(Mensagem.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return this.toString().getBytes(); 
     }
 
     public MensagemType getType() {

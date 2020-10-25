@@ -8,6 +8,7 @@ package br.edu.ifs.lagarto.bsi.sd.mensageiroudp.gui;
 import br.edu.ifs.lagarto.bsi.sd.mensageiroudp.conexao.IPrint;
 import br.edu.ifs.lagarto.bsi.sd.mensageiroudp.conexao.Mensagem;
 import br.edu.ifs.lagarto.bsi.sd.mensageiroudp.conexao.ClienteUDP;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Label;
 import java.awt.event.AdjustmentEvent;
@@ -15,10 +16,13 @@ import java.awt.event.AdjustmentListener;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 
@@ -30,39 +34,62 @@ public class TelaMensageiro extends javax.swing.JFrame {
 
     private ClienteUDP cliente;
     private Thread lerMensagens;
-    
-    private final Border boderDefault = new EmptyBorder(10,10,10,10);
+
+    private final Border boderDefault = new EmptyBorder(10, 10, 10, 10);
+
     /**
      * Creates new form MensageiroGui
      */
-    
-    
-    
+
+//    public static void main(String[] args) {
+//        java.awt.EventQueue.invokeLater(new Runnable() {
+//            public void run() {;
+//                new TelaMensageiro(null).setVisible(true);
+//
+//            }
+//        });
+//    }
+
     public TelaMensageiro(ClienteUDP cliente) {
         this.cliente = cliente;
         initComponents();
+//        if (cliente == null) {
+//            return;
+//        }
 
         lerMensagens = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     cliente.receberMensagem(new IPrint() {
-                        
+
                         @Override
                         public void print(Mensagem mensagem) {
-                            JLabel l = new JLabel(mensagem.getUsername()+" : " + mensagem.getMsg());
+                            JLabel l = new JLabel(getHtmlFormat(mensagem.getUsername() + " : " + mensagem.getMsg(), true));
                             l.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+                            l.setBorder(boderDefault);
                             jpMensagens.add(l);
                             jpMensagens.revalidate();
                             jpMensagens.repaint();
                             jScrollPane1.getVerticalScrollBar().setValue(jScrollPane1.getVerticalScrollBar().getMaximum());
-                            
+
                         }
                     });
                 } catch (IOException ex) {
-                    Logger.getLogger(TelaMensageiro.class.getName()).log(Level.SEVERE, null, ex);
+                    // Quando Fechar a conexão entrará aqui
+                    Logger.getLogger(TelaMensageiro.class.getName()).log(Level.INFO, null, ex);
+                    return;
                 }
-                JOptionPane.showMessageDialog(TelaMensageiro.this, "A Conexão foi encerrada");
+
+                JOptionPane.showMessageDialog(null, "A Conexão foi encerrada!!!");
+                java.awt.EventQueue.invokeLater(new Runnable() {
+                    public void run() {
+                        new Principal().setVisible(true);
+                    }
+                });
+                cliente.getServer().getSocket().close();
+
+                dispose();
             }
         });
         lerMensagens.start();;
@@ -82,24 +109,33 @@ public class TelaMensageiro extends javax.swing.JFrame {
         jpMensagens = new javax.swing.JPanel();
         jtMensagem = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(new java.awt.Color(116, 185, 253));
+        setResizable(false);
 
         jPanel1.setBackground(Principal.color);
 
-        jScrollPane1.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         jScrollPane1.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
 
         jpMensagens.setBackground(new java.awt.Color(255, 255, 255));
         jpMensagens.setAutoscrolls(true);
-        jpMensagens.setLayout(new java.awt.GridLayout(0, 1));
+        jpMensagens.setMaximumSize(new java.awt.Dimension(300, 300));
+        jpMensagens.setLayout(new javax.swing.BoxLayout(jpMensagens, javax.swing.BoxLayout.PAGE_AXIS));
         jScrollPane1.setViewportView(jpMensagens);
 
         jButton1.setText("Enviar");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
+            }
+        });
+
+        jButton2.setText("Sair");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
             }
         });
 
@@ -118,17 +154,22 @@ public class TelaMensageiro extends javax.swing.JFrame {
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 376, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(jButton2))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addContainerGap(14, Short.MAX_VALUE)
+                .addComponent(jButton2)
+                .addGap(18, 18, 18)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jtMensagem, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton1))
-                .addGap(0, 24, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -139,26 +180,43 @@ public class TelaMensageiro extends javax.swing.JFrame {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        if(jtMensagem.getText().isEmpty())
+        if (jtMensagem.getText().isEmpty()) {
             return;
+        }
+
         JLabel l2 = new JLabel(jtMensagem.getText());
+
+        l2.setText(getHtmlFormat(jtMensagem.getText(), false));
         l2.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         l2.setBorder(boderDefault);
-        
+        jScrollPane1.getVerticalScrollBar().setValue(jScrollPane1.getVerticalScrollBar().getMaximum());
         jpMensagens.add(l2);
         jpMensagens.revalidate();
         jpMensagens.repaint();
-        jScrollPane1.getVerticalScrollBar().setValue(jScrollPane1.getVerticalScrollBar().getMaximum());
+
         cliente.enviarMensagem(jtMensagem.getText());
         jtMensagem.setText("");
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        cliente.EncerrarConexao();
+        cliente.getServer().getSocket().close();
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new Principal().setVisible(true);
+            }
+        });
+        dispose();
+    }//GEN-LAST:event_jButton2ActionPerformed
 
 //    /**;
 //     * @param args the command line arguments
@@ -197,9 +255,17 @@ public class TelaMensageiro extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPanel jpMensagens;
     private javax.swing.JTextField jtMensagem;
     // End of variables declaration//GEN-END:variables
+
+    private String getHtmlFormat(String msg, boolean isleft) {
+
+        return String.format("<html><div style=\"width: 150px;padding: 4px;"
+                + "border: 1px solid black;text-align: " + (isleft ? "left" : "right") + ";"
+                + "color: blue;overflow-wrap: break-word;\">%s</div></html>", msg);
+    }
 }

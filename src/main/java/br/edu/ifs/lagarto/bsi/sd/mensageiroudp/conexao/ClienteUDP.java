@@ -29,7 +29,7 @@ public class ClienteUDP {
     }
 
     public void enviarMensagem(String msg) {
-        buffer = Mensagem.getMensagem(msg, server.getUsername()).toString().getBytes();
+        buffer = Mensagem.getMensagem(msg, server.getUsername()).getBytes();
         DatagramPacket send = new DatagramPacket(buffer, buffer.length, server.getIpCliente(), server.getPortaCliente());
         try {
             server.getSocket().send(send);
@@ -42,7 +42,7 @@ public class ClienteUDP {
         try {
             Mensagem mensagem = Mensagem.getMensagemConfiguracao(MensagemType.INICIAR_CONEXAO);
             mensagem.setUsername(this.server.getUsername());
-            buffer = mensagem.toString().getBytes();
+            buffer = mensagem.getBytes();
             InetAddress ipA = InetAddress.getByName(ip);
             DatagramPacket send = new DatagramPacket(buffer, buffer.length, ipA, porta);
             server.getSocket().send(send);
@@ -77,10 +77,11 @@ public class ClienteUDP {
     }
 
     public void EncerrarConexao() {
-        buffer = Mensagem.getMensagemConfiguracao(MensagemType.ENCERRAR_CONEXAO).toString().getBytes();
+        buffer = Mensagem.getMensagemConfiguracao(MensagemType.ENCERRAR_CONEXAO).getBytes();
         DatagramPacket send = new DatagramPacket(buffer, buffer.length, server.getIpCliente(), server.getPortaCliente());
         try {
             server.getSocket().send(send);
+            
         } catch (IOException ex) {
             Logger.getLogger(ServerUDP.class.getName()).log(Level.SEVERE, null, ex);
         }

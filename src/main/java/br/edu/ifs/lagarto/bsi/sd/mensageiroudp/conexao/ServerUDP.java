@@ -63,13 +63,13 @@ public class ServerUDP {
                     if (conexaoAceitar.aceitar(datagrama.getAddress().getHostAddress(), msg.getUsername())) {
                         IpCliente = datagrama.getAddress();
                         portaCliente = datagrama.getPort();
-                        bufferSend = Mensagem.getMensagemConfiguracao(MensagemType.ACEITAR_CONEXAO).toString().getBytes();
+                        bufferSend = Mensagem.getMensagemConfiguracao(MensagemType.ACEITAR_CONEXAO).getBytes();
                         datagrama = new DatagramPacket(bufferSend, bufferSend.length, IpCliente, datagrama.getPort());
                         socket.send(datagrama);
                         System.out.println("Conexao Aceita");
                         return true;
                     } else {
-                        bufferSend = Mensagem.getMensagemConfiguracao(MensagemType.REJEITAR_CONEXAO).toString().getBytes();
+                        bufferSend = Mensagem.getMensagemConfiguracao(MensagemType.REJEITAR_CONEXAO).getBytes();
                         datagrama = new DatagramPacket(bufferSend, bufferSend.length, datagrama.getAddress(), datagrama.getPort());
                         socket.send(datagrama);
                         System.out.println("Conexao Rejeitada");
@@ -106,7 +106,7 @@ public class ServerUDP {
                         System.out.print("Conexão aceita: " + IpCliente.getHostAddress());
                         break;
                     case ESTAH_ATIVO_REQUEST:
-                        buffer = Mensagem.getMensagemConfiguracao(MensagemType.ESTAH_ATIVO_REPLY).toString().getBytes();
+                        buffer = Mensagem.getMensagemConfiguracao(MensagemType.ESTAH_ATIVO_REPLY).getBytes();
                         datagrama = new DatagramPacket(buffer, buffer.length, IpCliente, datagrama.getPort());
                         socket.send(datagrama);
                         validacao = 0;
@@ -142,7 +142,7 @@ public class ServerUDP {
             JOptionPane.showMessageDialog(null, "A conexão foi encerrada!!!");
             return;
         }
-        buffer = Mensagem.getMensagemConfiguracao(MensagemType.ESTAH_ATIVO_REQUEST).toString().getBytes();
+        buffer = Mensagem.getMensagemConfiguracao(MensagemType.ESTAH_ATIVO_REQUEST).getBytes();
         DatagramPacket send = new DatagramPacket(buffer, buffer.length, IpCliente, portaCliente);
         try {
             socket.send(send);
